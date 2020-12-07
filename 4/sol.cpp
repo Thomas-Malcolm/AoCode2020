@@ -3,12 +3,20 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <regex>
 #include <bits/stdc++.h>
+
+/**
+ *
+ * This solution is pure filth and clutter...
+ *
+ */
 
 using namespace std;
 
 struct passport {
-	int byr, iyr, eyr, hgt;
+	int byr = -1, iyr = -1, eyr = -1, hgt = -1;
+	string hgtType;
 	string hcl, ecl, pid, cid;
 
 	int fieldCount; /* if count is 8 then we know is valid - small optimisation */
@@ -58,6 +66,7 @@ void fill_passport(struct passport& p, string line)
 			break;
 		case str_hash("hgt"):
 			p.hgt = stoi(val);
+			p.hgtType = val;
 			break;
 		case str_hash("hcl"):
 			p.hcl = val;
@@ -84,8 +93,6 @@ part_one(const vector<struct passport> pports)
 {
 	int count = 0;
 
-
-
 	for (struct passport p : pports) {
 		if (p.fieldCount == 8) { /* auto accept - all fields there */
 			count++;
@@ -99,6 +106,80 @@ part_one(const vector<struct passport> pports)
 	}		
 
 	return count;
+}
+
+int
+part_two(const vector<struct passport> pports)
+{
+	int count = 0;
+
+	regex hgtRegex("([0-9])*(cm|in)");
+	regex hclRegex("#([0-9a-f]{6})");
+	string eclOpts[] = {"amb", "blu", "brn", "grn", "gry", "hzl", "oth"};
+	regex pidRegex("([0-9]{9})");
+
+
+	for (struct passport p : pports) {
+		if (p.fieldCount < 7)  /* use a blacklist */
+			continue; 
+		
+
+		if ((p.fieldCount == 7) && (!p.cid.empty())) 
+			continue;
+		
+
+		if ((p.byr != -1) && ((p.byr < 1920) || (p.byr > 2002))) 
+			continue;
+		
+
+		if ((p.iyr != -1) && ((p.iyr < 2010) || (p.iyr > 2020))) 
+			continue;
+
+		if ((p.eyr != -1) && ((p.eyr < 2020) || (p.eyr > 2030))) 
+			continue;
+		
+
+		if (!p.hgtType.empty()) {
+			if (regex_match(p.hgtType, hgtRegex)) {
+				if (regex_match(p.hgtType, regex("([0-9])*(cm)$"))) { /* we be cm */
+					if ((p.hgt < 150) || (p.hgt > 193)) {
+						continue;
+					}
+				} else {
+					if ((p.hgt < 59) || (p.hgt > 76)) { /* has to be inches */
+						continue;
+					}
+				}
+			} else {
+				continue;
+			}
+		}
+
+
+		if (!p.hcl.empty() && !regex_match(p.hcl, hclRegex)) 
+			continue;
+		
+
+		if (!p.ecl.empty()) {
+			bool yep = false;
+			for (string opt : eclOpts) {
+				if (p.ecl == opt)
+					yep = true;
+			}
+			if (!yep)
+				continue;
+			
+		}
+		
+
+		if (!p.pid.empty() && !regex_match(p.pid, pidRegex))
+			continue;
+
+		count++;
+	}		
+
+	return count;
+
 }
 
 int
@@ -132,6 +213,8 @@ main(int argc, char** argv)
 	pports.push_back(pp); /* stupid file not being newline terminated */
 
 	cout << "Part one: " << part_one(pports) << endl;
+
+	cout << "Part two: " << part_two(pports) << endl;
 
 	return 0;
 }
