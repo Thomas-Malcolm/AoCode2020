@@ -99,6 +99,9 @@ part_two(vector<struct bpass> passes)
 {
 	int16_t out = 0, i = 0;
 
+	/* xor all the numbers in the range of possibles with the set of existing numbers
+	 * Assuming only one number is missing, it will be the output (all others will cancel themselves out)
+	 */
 	for (i = 0; i < passes.size(); i++) {
 		out = out ^ i ^ passes[i].wordVal;
 	}
